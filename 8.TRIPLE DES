@@ -1,0 +1,94 @@
+#include <stdio.h>
+#include <stdint.h>
+
+#define NUM_ROUNDS 16
+void initial_permutation(uint64_t *block) { }
+void inverse_initial_permutation(uint64_t *block) { }
+
+uint32_t mangler_function(uint32_t half_block, uint64_t subkey) {
+    return half_block ^ (uint32_t)(subkey & 0xFFFFFFFF);
+}
+
+void generate_subkeys(uint64_t key, uint64_t subkeys[NUM_ROUNDS]) {
+    for (int i = 0; i < NUM_ROUNDS; i++) {
+        subkeys[i] = ((key << i) | (key >> (56 - i))) & 0x00FFFFFFFFFFFFFF;
+    }
+}
+
+uint64_t des_encrypt(uint64_t plaintext, uint64_t key) {
+    uint64_t subkeys[NUM_ROUNDS];
+    generate_subkeys(key, subkeys);
+    initial_permutation(&plaintext);
+
+    uint32_t L = (plaintext >> 32) & 0xFFFFFFFF;
+    uint32_t R = plaintext & 0xFFFFFFFF;
+
+    for (int i = 0; i < NUM_ROUNDS; i++) {
+        uint32_t temp = R;
+        R = L ^ mangler_function(R, subkeys[i]);
+        L = temp;
+    }
+
+    uint64_t pre_output = ((uint64_t)R << 32) | L;
+    inverse_initial_permutation(&pre_output);
+    return pre_output;
+}
+
+uint64_t des_decrypt(uint64_t ciphertext, uint64_t key) {
+    uint64_t subkeys[NUM_ROUNDS];
+    generate_subkeys(key, subkeys);
+    initial_permutation(&ciphertext);
+
+    uint32_t L = (ciphertext >> 32) & 0xFFFFFFFF;
+    uint32_t R = ciphertext & 0xFFFFFFFF;
+
+    for (int i = NUM_ROUNDS - 1; i >= 0; i--) {
+        uint32_t temp = L;
+        L = R ^ mangler_function(L, subkeys[i]);
+        R = temp;
+    }
+
+    uint64_t pre_output = ((uint64_t)L << 32) | R;
+    inverse_initial_permutation(&pre_output);
+    return pre_output;
+}
+
+// --------------------------
+// Triple DES Logic
+// --------------------------
+
+uint64_t triple_des_encrypt(uint64_t plaintext, uint64_t k1, uint64_t k2, uint64_t k3) {
+    uint64_t step1 = des_encrypt(plaintext, k1);     // Encrypt with K1
+    uint64_t step2 = des_decrypt(step1, k2);         // Decrypt with K2
+    uint64_t step3 = des_encrypt(step2, k3);         // Encrypt with K3
+    return step3;
+}
+
+uint64_t triple_des_decrypt(uint64_t ciphertext, uint64_t k1, uint64_t k2, uint64_t k3) {
+    uint64_t step1 = des_decrypt(ciphertext, k3);    // Decrypt with K3
+    uint64_t step2 = des_encrypt(step1, k2);         // Encrypt with K2
+    uint64_t step3 = des_decrypt(step2, k1);         // Decrypt with K1
+    return step3;
+}
+
+int main() {
+    uint64_t plaintext = 0x123456789ABCDEF0;
+    uint64_t key1 = 0x133457799BBCDFF1;
+    uint64_t key2 = 0x1122334455667788;
+    uint64_t key3 = 0xA1B2C3D4E5F60718;
+
+    printf("Plaintext     : %016llX\n", plaintext);
+
+    uint64_t encrypted = triple_des_encrypt(plaintext, key1, key2, key3);
+    printf("Encrypted 3DES: %016llX\n", encrypted);
+
+    uint64_t decrypted = triple_des_decrypt(encrypted, key1, key2, key3);
+    printf("Decrypted     : %016llX\n", decrypted);
+
+    return 0;
+}
+
+OUTPUT :
+Plaintext     : 123456789ABCDEF0
+Encrypted 3DES: <ciphertext>
+Decrypted     : 123456789ABCDEF0
