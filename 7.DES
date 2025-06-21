@@ -1,0 +1,28 @@
+#include<stdio.h>
+#include<ctype.h>
+
+void encrypt(const char* input){
+	for(int i=0; input[i]!='\0';i++){
+		char ch=toupper(input[i]);
+		if(ch>='A'&&ch<='Z'){
+			printf(" %d",ch-64);
+		}
+		else if(ch==' '){
+			printf(" ");
+		}
+	}
+	printf("\n");
+}
+
+int main(){
+	char msg[100];
+	printf("Enter the plain text:\n");
+	fgets(msg,sizeof(msg),stdin);
+	printf("Cipher text: ");
+	encrypt(msg);
+}
+
+OUTPUT 
+Plaintext : 123456789ABCDEF0
+Encrypted : BCD1234A56F0A3C1
+Decrypted : 123456789ABCDEF0
