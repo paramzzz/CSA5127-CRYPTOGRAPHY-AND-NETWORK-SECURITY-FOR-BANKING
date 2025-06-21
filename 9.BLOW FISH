@@ -1,0 +1,81 @@
+#include <stdio.h>
+#include <stdint.h>
+
+#define N 16
+
+uint32_t P[18];
+uint32_t S[4][256];
+
+void initialize_subkeys() {
+    for (int i = 0; i < 18; i++)
+        P[i] = 0x243F6A88 ^ i;
+
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < 256; j++)
+            S[i][j] = (0x10000000 * i + j);
+}
+
+uint32_t F(uint32_t x) {
+    uint8_t a = (x >> 24) & 0xFF;
+    uint8_t b = (x >> 16) & 0xFF;
+    uint8_t c = (x >> 8) & 0xFF;
+    uint8_t d = x & 0xFF;
+
+    return ((S[0][a] + S[1][b]) ^ S[2][c]) + S[3][d];
+}
+
+void blowfish_encrypt(uint32_t *L, uint32_t *R) {
+    for (int i = 0; i < N; i++) {
+        *L ^= P[i];
+        *R ^= F(*L);
+        uint32_t temp = *L;
+        *L = *R;
+        *R = temp;
+    }
+
+    uint32_t temp = *L;
+    *L = *R;
+    *R = temp;
+
+    *R ^= P[N];
+    *L ^= P[N + 1];
+}
+
+void blowfish_decrypt(uint32_t *L, uint32_t *R) {
+    for (int i = N + 1; i > 1; i--) {
+        *L ^= P[i];
+        *R ^= F(*L);
+        uint32_t temp = *L;
+        *L = *R;
+        *R = temp;
+    }
+
+    uint32_t temp = *L;
+    *L = *R;
+    *R = temp;
+
+    *R ^= P[1];
+    *L ^= P[0];
+}
+
+int main() {
+    initialize_subkeys();
+
+    uint32_t L = 0x01234567;
+    uint32_t R = 0x89ABCDEF;
+
+    printf("Plaintext : %08X %08X\n", L, R);
+
+    blowfish_encrypt(&L, &R);
+    printf("Encrypted : %08X %08X\n", L, R);
+
+    blowfish_decrypt(&L, &R);
+    printf("Decrypted : %08X %08X\n", L, R);
+
+    return 0;
+}
+
+OUTPUT :
+Plaintext : 01234567 89ABCDEF
+Encrypted : 6A99B7A5 D44AC107
+Decrypted : 01234567 89ABCDEF
