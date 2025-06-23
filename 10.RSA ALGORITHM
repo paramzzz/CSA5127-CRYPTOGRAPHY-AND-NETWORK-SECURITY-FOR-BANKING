@@ -1,0 +1,77 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+int gcd(int a, int b) {
+    while (b != 0) {
+        int temp = a % b;
+        a = b;
+        b = temp;
+    }
+    return a;
+}
+
+int modInverse(int e, int phi) {
+    int t = 0, newt = 1;
+    int r = phi, newr = e;
+    while (newr != 0) {
+        int quotient = r / newr;
+        int temp = newt;
+        newt = t - quotient * newt;
+        t = temp;
+
+        temp = newr;
+        newr = r - quotient * newr;
+        r = temp;
+    }
+    if (r > 1) return -1; // e is not invertible
+    if (t < 0) t += phi;
+    return t;
+}
+
+long long modExp(long long base, long long exp, long long mod) {
+    long long result = 1;
+    base %= mod;
+    while (exp > 0) {
+        if (exp % 2 == 1)
+            result = (result * base) % mod;
+        exp = exp / 2;
+        base = (base * base) % mod;
+    }
+    return result;
+}
+
+int main() {
+    int p = 3, q = 11;
+    int n = p * q;            // Step 1: Compute n = p * q
+    int phi = (p - 1) * (q - 1); // Step 2: Compute φ(n)
+
+    int e;
+    for (e = 2; e < phi; e++) {
+        if (gcd(e, phi) == 1) break; // Step 3: Choose e such that gcd(e, φ(n)) = 1
+    }
+
+    int d = modInverse(e, phi); // Step 4: Compute d such that (d * e) % φ(n) = 1
+
+    printf("Public Key: (e = %d, n = %d)\n", e, n);
+    printf("Private Key: (d = %d, n = %d)\n", d, n);
+
+    int message;
+    printf("Enter message (integer): ");
+    scanf("%d", &message);
+
+    long long encrypted = modExp(message, e, n);  // Step 5: Encrypt C = M^e mod n
+    long long decrypted = modExp(encrypted, d, n); // Step 6: Decrypt M = C^d mod n
+
+    printf("Encrypted: %lld\n", encrypted);
+    printf("Decrypted: %lld\n", decrypted);
+
+    return 0;
+}
+
+OUTPUT :
+Public Key: (e = 3, n = 33)
+Private Key: (d = 7, n = 33)
+Enter message (integer): 5
+Encrypted: 26
+Decrypted: 5
