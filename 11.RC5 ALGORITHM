@@ -1,0 +1,110 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+#define W 32
+#define R 12
+#define KEY_BYTES 16
+#define C (KEY_BYTES / 4)
+#define T (2 * (R + 1))
+
+uint32_t S[T];
+#define Pw 0xB7E15163
+#define Qw 0x9E3779B9
+
+uint32_t ROTL(uint32_t x, uint32_t y) {
+    return (x << (y & (W - 1))) | (x >> (W - (y & (W - 1))));
+}
+
+uint32_t ROTR(uint32_t x, uint32_t y) {
+    return (x >> (y & (W - 1))) | (x << (W - (y & (W - 1))));
+}
+
+void clear_input_buffer() {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF);
+}
+
+void RC5_KeyExpansion(uint8_t key[KEY_BYTES]) {
+    uint32_t L[C] = {0};
+    for (int i = KEY_BYTES - 1; i >= 0; i--) {
+        L[i / 4] = (L[i / 4] << 8) + key[i];
+    }
+    S[0] = Pw;
+    for (int i = 1; i < T; i++) {
+        S[i] = S[i - 1] + Qw;
+    }
+    uint32_t A = 0, B = 0;
+    int i = 0, j = 0;
+    for (int k = 0; k < 3 * T; k++) {
+        A = S[i] = ROTL(S[i] + A + B, 3);
+        B = L[j] = ROTL(L[j] + A + B, A + B);
+        i = (i + 1) % T;
+        j = (j + 1) % C;
+    }
+}
+
+void RC5_Encrypt(uint32_t *pt1, uint32_t *pt2) {
+    uint32_t A = *pt1 + S[0];
+    uint32_t B = *pt2 + S[1];
+    for (int i = 1; i <= R; i++) {
+        A = ROTL(A ^ B, B) + S[2 * i];
+        B = ROTL(B ^ A, A) + S[2 * i + 1];
+    }
+    *pt1 = A;
+    *pt2 = B;
+}
+
+void RC5_Decrypt(uint32_t *ct1, uint32_t *ct2) {
+    uint32_t B = *ct2;
+    uint32_t A = *ct1;
+    for (int i = R; i >= 1; i--) {
+        B = ROTR(B - S[2 * i + 1], A) ^ A;
+        A = ROTR(A - S[2 * i], B) ^ B;
+    }
+    *ct2 = B - S[1];
+    *ct1 = A - S[0];
+}
+
+int main() {
+    uint8_t key[KEY_BYTES + 1];
+    uint32_t pt1, pt2;
+    uint32_t ct1, ct2, dt1, dt2;
+
+    printf("Enter 16-character key: ");
+    fgets((char*)key, KEY_BYTES + 1, stdin);
+    clear_input_buffer();
+
+    if (strlen((char*)key) < 16) {
+        printf("Key must be exactly 16 characters.\n");
+        return 1;
+    }
+
+    printf("Enter plaintext part 1 (in hex, e.g., 0x12345678): ");
+    scanf("%x", &pt1);
+
+    printf("Enter plaintext part 2 (in hex, e.g., 0x9ABCDEF0): ");
+    scanf("%x", &pt2);
+
+    printf("Plaintext: %08X %08X\n", pt1, pt2);
+
+    RC5_KeyExpansion(key);
+
+    ct1 = pt1;
+    ct2 = pt2;
+    RC5_Encrypt(&ct1, &ct2);
+    printf("Encrypted: %08X %08X\n", ct1, ct2);
+
+    dt1 = ct1;
+    dt2 = ct2;
+    RC5_Decrypt(&dt1, &dt2);
+    printf("Decrypted: %08X %08X\n", dt1, dt2);
+
+    return 0;
+}
+OUTPUT :
+Enter 16-character key: PARAMESWARIISSTU
+Enter plaintext part 1 (in hex, e.g., 0x12345678): 0x19237226
+Enter plaintext part 2 (in hex, e.g., 0x9ABCDEF0): 0x6ABCDEF0
+Plaintext: 19237226 6ABCDEF0
+Encrypted: 659E7DC3 E382E391
+Decrypted: 19237226 6ABCDEF0
