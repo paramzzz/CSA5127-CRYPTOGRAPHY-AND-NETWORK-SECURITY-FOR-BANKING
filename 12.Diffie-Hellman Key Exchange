@@ -1,0 +1,66 @@
+#include <stdio.h>
+
+long long mod_pow(long long base, long long exp, long long mod) {
+    long long result = 1;
+    base = base % mod;
+    while (exp > 0) {
+        if (exp % 2 == 1)
+            result = (result * base) % mod;
+        exp = exp >> 1;
+        base = (base * base) % mod;
+    }
+    return result;
+}
+
+int main() {
+    long long p, g, a, b;
+    printf("Enter a prime number (p): ");
+    scanf("%lld", &p);
+    printf("Enter primitive root modulo p (g): ");
+    scanf("%lld", &g);
+    printf("Enter Alice's private key (a): ");
+    scanf("%lld", &a);
+    printf("Enter Bob's private key (b): ");
+    scanf("%lld", &b);
+
+    long long A = mod_pow(g, a, p);
+    long long B = mod_pow(g, b, p);
+    long long keyA = mod_pow(B, a, p);
+    long long keyB = mod_pow(A, b, p);
+
+    printf("\n--- Diffie-Hellman Key Exchange ---\n");
+    printf("Prime (p): %lld\n", p);
+    printf("Base (g): %lld\n", g);
+    printf("Alice's Private Key (a): %lld\n", a);
+    printf("Bob's Private Key (b): %lld\n", b);
+    printf("\nAlice's Public Key: %lld\n", A);
+    printf("Bob's Public Key: %lld\n", B);
+    printf("\nShared Key (Alice): %lld\n", keyA);
+    printf("Shared Key (Bob): %lld\n", keyB);
+
+    if (keyA == keyB)
+        printf("\nShared secret established: %lld\n", keyA);
+    else
+        printf("\nShared key mismatch.\n");
+
+    return 0;
+}
+OUTPUT :
+Enter a prime number (p): 23
+Enter primitive root modulo p (g): 5
+Enter Alice's private key (a): 6
+Enter Bob's private key (b): 15
+
+--- Diffie-Hellman Key Exchange ---
+Prime (p): 23
+Base (g): 5
+Alice's Private Key (a): 6
+Bob's Private Key (b): 15
+
+Alice's Public Key: 8
+Bob's Public Key: 19
+
+Shared Key (Alice): 2
+Shared Key (Bob): 2
+
+Shared secret established: 2
