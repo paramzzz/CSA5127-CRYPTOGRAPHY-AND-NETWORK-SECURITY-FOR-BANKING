@@ -1,0 +1,29 @@
+#include <stdio.h>
+#include <string.h>
+
+
+unsigned char simple_mac(const unsigned char *key, int key_len,
+                         const unsigned char *msg, int msg_len) {
+    unsigned char mac = 0;
+
+    for (int i = 0; i < msg_len; i++) {
+        mac ^= msg[i] ^ key[i % key_len];
+    }
+
+    return mac;
+}
+
+int main() {
+    const unsigned char key[] = "192372266";
+    const unsigned char message[] = "PARAMESWARI";
+
+    unsigned char mac_val = simple_mac(key, strlen((const char*)key), message, strlen((const char*)message));
+
+    printf("Message: %s\n", message);
+    printf("MAC value (1 byte): 0x%02x\n", mac_val);
+
+    return 0;
+}
+OUTPUT:
+Message: PARAMESWARI
+MAC value (1 byte): 0x62
