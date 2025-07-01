@@ -1,0 +1,36 @@
+#include <stdio.h>
+#include <string.h>
+
+void hmac_xor(const char *key, const char *message, char *output) {
+    int i;
+    int key_len = strlen(key);
+    for (i = 0; message[i] != '\0'; i++) {
+        output[i] = message[i] ^ key[i % key_len];
+    }
+    output[i] = '\0';  
+}
+
+int main() {
+    char key[100], message[100], output[100];
+
+    printf("Enter key: ");
+    fgets(key, sizeof(key), stdin);
+    key[strcspn(key, "\n")] = 0; 
+
+    printf("Enter message: ");
+    fgets(message, sizeof(message), stdin);
+    message[strcspn(message, "\n")] = 0; 
+
+    hmac_xor(key, message, output);
+
+    printf("Generated HMAC (XOR): ");
+    for (int i = 0; output[i] != '\0'; i++)
+        printf("%02X", (unsigned char)output[i]);
+    printf("\n");
+
+    return 0;
+}
+OUTPUT :
+Enter key: 192372266
+Enter message: PARAMESWARI
+Generated HMAC (XOR): 617860727A776161776370
