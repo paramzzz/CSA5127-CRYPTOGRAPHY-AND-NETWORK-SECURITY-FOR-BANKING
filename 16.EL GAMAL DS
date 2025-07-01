@@ -1,0 +1,79 @@
+#include <stdio.h>
+
+int mod_exp(int base, int exp, int mod) {
+    int result = 1;
+    base %= mod;
+    while (exp > 0) {
+        if (exp % 2)
+            result = (result * base) % mod;
+        base = (base * base) % mod;
+        exp /= 2;
+    }
+    return result;
+}
+
+int mod_inverse(int k, int mod) {
+    for (int i = 1; i < mod; i++) {
+        if ((k * i) % mod == 1)
+            return i;
+    }
+    return -1;
+}
+
+int gcd(int a, int b) {
+    while (b != 0) {
+        int t = b;
+        b = a % b;
+        a = t;
+    }
+    return a;
+}
+
+int main() {
+    int p = 23;
+    int g = 5;
+    int x = 6;
+    int y = mod_exp(g, x, p);
+    printf("Public key: (p = %d, g = %d, y = %d)\n", p, g, y);
+    printf("Private key: x = %d\n", x);
+
+    int m = 15;
+    printf("Message to sign: m = %d\n", m);
+
+    int k = 7;
+    if (gcd(k, p - 1) != 1) {
+        printf("Invalid k: not coprime with p-1\n");
+        return 1;
+    }
+
+    int r = mod_exp(g, k, p);
+    int k_inv = mod_inverse(k, p - 1);
+    if (k_inv == -1) {
+        printf("Modular inverse of k doesn't exist.\n");
+        return 1;
+    }
+
+    int s = (k_inv * (m - x * r)) % (p - 1);
+    if (s < 0) s += (p - 1);
+
+    printf("Signature: (r = %d, s = %d)\n", r, s);
+
+    int v1 = (mod_exp(y, r, p) * mod_exp(r, s, p)) % p;
+    int v2 = mod_exp(g, m, p);
+
+    printf("Verification values: v1 = %d, v2 = %d\n", v1, v2);
+
+    if (v1 == v2)
+        printf("Signature is VALID \n");
+    else
+        printf("Signature is INVALID \n");
+
+    return 0;
+}
+OUTPUT :
+Public key: (p = 23, g = 5, y = 8)
+Private key: x = 6
+Message to sign: m = 15
+Signature: (r = 17, s = 19)
+Verification values: v1 = 19, v2 = 19
+Signature is VALID 
