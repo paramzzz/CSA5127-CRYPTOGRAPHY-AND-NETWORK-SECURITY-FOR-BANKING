@@ -1,0 +1,70 @@
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+
+typedef struct {
+    char sessionKey[32];
+    char clientID[32];
+    char timestamp[64];
+} Ticket;
+
+void createTimestamp(char *ts) {
+    time_t now = time(NULL);
+    sprintf(ts, "%ld", now);
+}
+
+// Simulate Authentication Server (AS)
+void authenticateWithAS(const char *clientID, Ticket *ticket_tgs, char *sessionKey_c_tgs) {
+    strcpy(sessionKey_c_tgs, "sessionKey_c_tgs_123");
+    strcpy(ticket_tgs->clientID, clientID);
+    strcpy(ticket_tgs->sessionKey, sessionKey_c_tgs);
+    createTimestamp(ticket_tgs->timestamp);
+    printf("AS: Issued Ticket_tgs and sessionKey_c_tgs to client.\n");
+}
+
+// Simulate Ticket Granting Server (TGS)
+void requestServiceTicket(const Ticket *ticket_tgs, const char *authenticator, const char *serviceID, Ticket *ticket_v, char *sessionKey_c_v) {
+    printf("TGS: Verified Ticket_tgs and Authenticator.\n");
+    strcpy(sessionKey_c_v, "sessionKey_c_v_456");
+    strcpy(ticket_v->clientID, ticket_tgs->clientID);
+    strcpy(ticket_v->sessionKey, sessionKey_c_v);
+    createTimestamp(ticket_v->timestamp);
+    printf("TGS: Issued Ticket_v and sessionKey_c_v to client for service '%s'.\n", serviceID);
+}
+
+// Simulate Service Server (V)
+void requestService(const Ticket *ticket_v, const char *authenticator, const char *sessionKey_c_v) {
+    printf("Server: Received Ticket_v. Authenticator verified.\n");
+    printf("Server: Responding with Timestamp + 1 encrypted with sessionKey_c_v.\n");
+}
+
+int main() {
+    char clientID[] = "ClientA";
+    char serviceID[] = "ServiceX";
+    char sessionKey_c_tgs[32], sessionKey_c_v[32];
+    Ticket ticket_tgs, ticket_v;
+
+    printf("Phase 1: Client authenticates with AS\n");
+    authenticateWithAS(clientID, &ticket_tgs, sessionKey_c_tgs);
+
+    printf("\nPhase 2: Client requests service ticket from TGS\n");
+    char authenticator1[64]; createTimestamp(authenticator1);
+    requestServiceTicket(&ticket_tgs, authenticator1, serviceID, &ticket_v, sessionKey_c_v);
+
+    printf("\nPhase 3: Client requests actual service from Server\n");
+    char authenticator2[64]; createTimestamp(authenticator2);
+    requestService(&ticket_v, authenticator2, sessionKey_c_v);
+
+    return 0;
+}
+OUTPUT :
+Phase 1: Client authenticates with AS
+AS: Issued Ticket_tgs and sessionKey_c_tgs to client.
+
+Phase 2: Client requests service ticket from TGS
+TGS: Verified Ticket_tgs and Authenticator.
+TGS: Issued Ticket_v and sessionKey_c_v to client for service 'ServiceX'.
+
+Phase 3: Client requests actual service from Server
+Server: Received Ticket_v. Authenticator verified.
+Server: Responding with Timestamp + 1 encrypted with sessionKey_c_v.
