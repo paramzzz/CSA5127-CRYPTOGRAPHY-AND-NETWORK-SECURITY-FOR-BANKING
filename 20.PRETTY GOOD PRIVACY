@@ -1,0 +1,39 @@
+#include <stdio.h>
+
+int mod_exp(int base, int exp, int mod) {
+    int result = 1;
+    while (exp > 0) {
+        result = (result * base) % mod;
+        exp--;
+    }
+    return result;
+}
+
+int main() {
+    int p = 17, q = 23;
+    int n = p * q;           // n = 391
+    int e = 3;               // Public key exponent
+    int d = 235;             // Private key exponent
+    char message;
+
+    printf("Enter a character to encrypt: ");
+    scanf(" %c", &message);
+    int m = (int)message;
+
+    if (m >= n) {
+        printf("Message too large for current key size.\n");
+        return 1;
+    }
+
+    int cipher = mod_exp(m, e, n);     // Encryption: c = m^e mod n
+    int decrypted = mod_exp(cipher, d, n); // Decryption: m = c^d mod n
+
+    printf("Encrypted (ciphertext): %d\n", cipher);
+    printf("Decrypted (original char): %c\n", (char)decrypted);
+
+    return 0;
+}
+OUTPUT :
+Enter a character to encrypt: P
+Encrypted (ciphertext): 181
+Decrypted (original char): P
