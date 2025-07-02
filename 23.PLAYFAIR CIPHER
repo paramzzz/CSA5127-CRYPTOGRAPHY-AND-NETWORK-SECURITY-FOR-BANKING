@@ -1,0 +1,122 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+char matrix[5][5];
+
+void createMatrix(char key[]) {
+    int used[26] = {0};
+    int i, j, k = 0;
+    used['J' - 'A'] = 1; 
+
+    for (i = 0; key[i]; i++) {
+        char c = toupper(key[i]);
+        if (c < 'A' || c > 'Z') continue;
+        if (!used[c - 'A']) {
+            matrix[k / 5][k % 5] = c;
+            used[c - 'A'] = 1;
+            k++;
+        }
+    }
+
+    for (i = 0; i < 26; i++) {
+        if (!used[i]) {
+            matrix[k / 5][k % 5] = i + 'A';
+            used[i] = 1;
+            k++;
+        }
+    }
+}
+
+void printMatrix() {
+    printf("\n5x5 Key Matrix:\n");
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 5; j++)
+            printf("%c ", matrix[i][j]);
+        printf("\n");
+    }
+}
+
+void findPosition(char c, int *row, int *col) {
+    if (c == 'J') c = 'I';  
+    for (int i = 0; i < 5; i++)
+        for (int j = 0; j < 5; j++)
+            if (matrix[i][j] == c) {
+                *row = i;
+                *col = j;
+                return;
+            }
+}
+
+void processMessage(char in[], char out[], int encrypt) {
+    char msg[100];
+    int len = 0;
+    for (int i = 0; in[i]; i++) {
+        char c = toupper(in[i]);
+        if (c >= 'A' && c <= 'Z') {
+            if (c == 'J') c = 'I';
+            msg[len++] = c;
+        }
+    }
+
+    int i = 0, j = 0;
+    while (i < len) {
+        char a = msg[i];
+        char b = (i + 1 < len) ? msg[i + 1] : 'X';
+        if (a == b) b = 'X', i--;
+        int r1, c1, r2, c2;
+        findPosition(a, &r1, &c1);
+        findPosition(b, &r2, &c2);
+
+        if (r1 == r2) {
+            out[j++] = matrix[r1][(c1 + (encrypt ? 1 : 4)) % 5];
+            out[j++] = matrix[r2][(c2 + (encrypt ? 1 : 4)) % 5];
+        } else if (c1 == c2) {
+            out[j++] = matrix[(r1 + (encrypt ? 1 : 4)) % 5][c1];
+            out[j++] = matrix[(r2 + (encrypt ? 1 : 4)) % 5][c2];
+        } else {
+            out[j++] = matrix[r1][c2];
+            out[j++] = matrix[r2][c1];
+        }
+        i += 2;
+    }
+    out[j] = '\0';
+}
+
+int main() {
+    char key[100], plaintext[100], ciphertext[100], decrypted[100];
+
+    printf("Enter keyword: ");
+    fgets(key, sizeof(key), stdin);
+    key[strcspn(key, "\n")] = '\0';
+
+    createMatrix(key);
+    printMatrix();
+
+    printf("\nEnter plaintext: ");
+    fgets(plaintext, sizeof(plaintext), stdin);
+    plaintext[strcspn(plaintext, "\n")] = '\0';
+
+    processMessage(plaintext, ciphertext, 1);
+    printf("\nEncrypted (Ciphertext): %s\n", ciphertext);
+
+    processMessage(ciphertext, decrypted, 0);
+    printf("Decrypted (Plaintext): %s\n", decrypted);
+
+    return 0;
+}
+
+OUTPUT :
+Enter keyword: PARAMESWARI
+
+5x5 Key Matrix:
+P A R M E 
+S W I B C 
+D F G H K 
+L N O Q T 
+U V X Y Z 
+
+Enter plaintext: CRYPTOGRAPHY
+
+Encrypted (Ciphertext): IEUMLQOIRAQM
+Decrypted (Plaintext): CRYPTOGRAPHY
